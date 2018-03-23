@@ -6,7 +6,7 @@ Created on 2018��3��19��
 
 
 
-textfile = ".\\example3.txt"
+textfile = ".\\example2.txt"
 
 tfe = open(textfile,'r')
 dr = tfe.read()
