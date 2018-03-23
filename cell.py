@@ -6,7 +6,7 @@ Created on 2018��3��19��
 
 
 
-textfile = ".\\example2.txt"
+textfile = ".\\example3.txt"
 
 tfe = open(textfile,'r')
 dr = tfe.read()
@@ -41,12 +41,18 @@ class CellGroup(list):
     '''
     def __init__(self):
         list.__init__(self)
-    
+        self.cellge = []
+        
     def add(self,obj):
-        if obj in self:
+        if obj.text in self.cellge:
             raise(Exception(" every cell must be only one "))
         else:
+            self._eleget(obj)
             self.append(obj)
+            
+    
+    def _eleget(self,obj):
+        self.cellge.append(obj.text)
     
     def group_size(self):
         return len(self)
@@ -71,7 +77,7 @@ def create_cell_group(text):
     cellgroup = CellGroup()
     textset = set(text)
     for i in textset:
-        if ord(i) > 0x4e00 - 1:   # just include chinese word, no other symbol
+        if ord(i) > 0x4e00 - 1 and ord(i) < 0xfa64:   # just include chinese word, no other symbol
             ce = Cell()
             ce.text = i
             cellgroup.add(ce)
@@ -166,10 +172,10 @@ def get_two_word_vocabulary(cellgroup,pc = 0.5):
                 
         
 cellgroup = create_cell_group(dr)                              
-
+   
 create_cell_link(cellgroup,dr)
-
+   
 show_cellgroup(cellgroup)
-
+ 
 ab = get_two_word_vocabulary(cellgroup,0.15)
 print(ab)
