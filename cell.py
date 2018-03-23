@@ -51,7 +51,20 @@ class CellGroup(list):
     def group_size(self):
         return len(self)
 
-        
+    def get_biggest_tube_size(self):
+        biggesttubesize = 0
+        for i in self:
+            for x in i.link:
+                if x.size > biggesttubesize:
+                    biggesttubesize = x.size
+        return biggesttubesize
+    
+    def get_biggest_cell_size(self):
+        biggestcellsize = 0
+        for i in self:
+            if i.size > biggestcellsize:
+                biggestcellsize = i.size
+        return biggestcellsize
         
 def create_cell_group(text):
     ''' get cell of the first exist '''
@@ -123,7 +136,7 @@ def create_cell_link(cellgroup,text):
 
              
                 
-def show_cellgroup(cg):
+def show_cellgroup(cellgroup):
     ''' show cellgroup inside '''
     for i in cellgroup:
         print("main : %s,%d"%(i.text,i.size))
@@ -134,6 +147,22 @@ def show_cellgroup(cg):
                 print("lts : %d, otherside : %s, osize : %d"%(x.size,x.otherside.text,x.otherside.size))
         print("---------------------------------------------------------")
 
+def get_two_word_vocabulary(cellgroup,pc = 0.5):
+    ''' get two word struct vocabulary of chinese,
+        cellgroup = input CellGroup,
+        pc = get size of percent for biggest LinkTube
+    '''
+    biggesttubesize = cellgroup.get_biggest_tube_size()
+    vocL = []                
+    biggesttubesize *= pc
+    
+    for i in cellgroup:
+        for x in i.link:
+            if x.size > biggesttubesize:
+                vocL.append(x.selfside.text + x.otherside.text)
+    return vocL
+    
+    
                 
         
 cellgroup = create_cell_group(dr)                              
@@ -141,3 +170,6 @@ cellgroup = create_cell_group(dr)
 create_cell_link(cellgroup,dr)
 
 show_cellgroup(cellgroup)
+
+ab = get_two_word_vocabulary(cellgroup,0.15)
+print(ab)
