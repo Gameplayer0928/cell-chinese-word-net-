@@ -4,15 +4,33 @@ Created on 2018��3��19��
  @author: Gameplayer0928 Qi Gao
 '''
 
+import sys
+import codecs
+import tkinter
+import tkinter.filedialog
+import tkinter.messagebox
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 
-textfile = ".\\example2.txt"
+plt.rcParams[u'font.sans-serif'] = ['simhei']      # 指定默认字体
 
-tfe = open(textfile,'r')
-dr = tfe.read()
-tfe.close()
+plt.rcParams['axes.unicode_minus'] = False        # 解决保存图像是负号'-'显示为方块的问题
 
 
+FD = None
+CODE = None
+
+if sys.platform == 'linux':
+    FD = ".\\"
+    CODE = "utf-8"
+elif sys.platform == "win32":
+    FD = "./"
+    CODE = "gbk"
+    
+TAV = np.dtype([("text",np.unicode_,2),("value",np.int)])
+    
 class Cell():
     ''' cell is the smallies element of textbrain,
         text = one text,
@@ -71,7 +89,7 @@ class CellGroup(list):
             if i.size > biggestcellsize:
                 biggestcellsize = i.size
         return biggestcellsize
-        
+          
 def create_cell_group(text):
     ''' get cell of the first exist '''
     cellgroup = CellGroup()
@@ -82,8 +100,6 @@ def create_cell_group(text):
             ce.text = i
             cellgroup.add(ce)
     return cellgroup
-
-
 
 
 def create_cell_link(cellgroup,text):
@@ -100,7 +116,6 @@ def create_cell_link(cellgroup,text):
     for i in cellgroup:
         for z in i.link:
             z.selfside = i
-
 
 ##############################################################################  from cellgroup get current word
     for i in range(textcount-1):
@@ -139,9 +154,7 @@ def create_cell_link(cellgroup,text):
                 bcount += 1
             else:
                 count += 1
-
-             
-                
+     
 def show_cellgroup(cellgroup):
     ''' show cellgroup inside '''
     for i in cellgroup:
@@ -159,23 +172,126 @@ def get_two_word_vocabulary(cellgroup,pc = 0.5):
         pc = get size of percent for biggest LinkTube
     '''
     biggesttubesize = cellgroup.get_biggest_tube_size()
-    vocL = []                
+    vocL = []
+#     vocV = []               
     biggesttubesize *= pc
     
     for i in cellgroup:
         for x in i.link:
             if x.size > biggesttubesize:
-                vocL.append(x.selfside.text + x.otherside.text)
+                vocL.append((x.selfside.text + x.otherside.text,x.size))
     return vocL
     
-    
-                
+class MainGui():
+    def __init__(self):
+        self.maingui = tkinter.Tk()
+        self.maingui.title("Cell")
+########################################################################################################
+        frame1 = tkinter.Frame(self.maingui)
+        button1 = tkinter.Button(frame1,text="1.input text",command=self._load_txt)
+        button1.pack(side = "left")
+#-------------------------------------------------------------------------------------------------------
+        button2 = tkinter.Button(frame1,text="2.Cell dispose",command=self._cell_dispose,bg = 'red')
+        button2.pack(side = "left")
+#------------------------------------------------------------------------------------------------------
+        button3 = tkinter.Button(frame1,text="show cellgroup in CLI",command=self._show_cellgroup,bg = 'green')
+        button3.pack(side = "right")
+        frame1.pack()
+#####################################################################################################        
+        frame2 = tkinter.Frame(self.maingui,relief = "groove",borderwidth = 1)
+        showlabel = tkinter.Label(frame2,text = "3.set config of getted two word struct vocabulary")
+        showlabel.pack()
+#--------------------------------------------------------------------------------------------------        
+        frame2_1 = tkinter.Frame(frame2)
+        label1 = tkinter.Label(frame2_1,text = "set precent (0.0~1.0):")
+        label1.grid(row = 0,column=0)
+        self.entry1 = tkinter.Entry(frame2_1)
+        self.entry1.grid(row=0,column=1)
+#---------------------------------------------------------------------------------------------------
+        label2 = tkinter.Label(frame2_1,text = "set tick size:")
+        label2.grid(row = 1,column=0)
+        self.entry2 = tkinter.Entry(frame2_1)
+        self.entry2.grid(row=1,column=1)
+#---------------------------------------------------------------------------------------------------
+        label3 = tkinter.Label(frame2_1,text = "set tick rotate:")
+        label3.grid(row = 2,column=0)
+        self.entry3 = tkinter.Entry(frame2_1)
+        self.entry3.grid(row=2,column=1)
+        frame2_1.pack()
+#---------------------------------------------------------------------------------------------------
+        button4 = tkinter.Button(frame2,text="set and show in matplotlib",command=self._pt)
+        button4.pack()
+        frame2.pack()
+####################################################################################################   
+     
+        self.textfile = None
+        self.text = None
         
-cellgroup = create_cell_group(dr)                              
-   
-create_cell_link(cellgroup,dr)
-   
-show_cellgroup(cellgroup)
- 
-ab = get_two_word_vocabulary(cellgroup,0.15)
-print(ab)
+        self.cellgroup = None
+        
+        self.vocpercent = None
+        self.ticksize = None
+        self.tickrotate = None
+        
+        self.vocL = None
+        
+        self.maingui.mainloop()
+        
+    def _load_txt(self):
+        try:
+            fd = tkinter.filedialog.FileDialog(self.maingui,title="select txt file")
+            self.textfile = fd.go(FD)
+            filea = codecs.open(self.textfile,'r',encoding=CODE)
+            self.text = filea.read()
+            filea.close()
+        except:
+            tkinter.messagebox.showerror(title="text input error", message="please input text file correct,may be file encoding problem")
+    
+    def _cell_dispose(self):
+        try: 
+            self.cellgroup = create_cell_group(self.text)
+            tkinter.messagebox.showinfo(title = "create and link cell group process", message = "cell group has been created,\
+next will create link in cell group,\
+this step spending time depand with text file size,\
+just please wait. went its done, will give a messagebox.\
+ click 'OK' to contiue")
+            create_cell_link(self.cellgroup, self.text)
+            tkinter.messagebox.showinfo(title = "process compeled", message = "ready for show in matplotlib")
+        except:
+            tkinter.messagebox.showerror(title="error", message="prestep something wrong")
+            
+    
+    
+    def _show_cellgroup(self):
+        try:
+            show_cellgroup(self.cellgroup)
+        except:
+            tkinter.messagebox.showerror(title="error", message="prestep something wrong")
+    
+    def _pt(self):
+        try:
+            self.vocpercent = float(self.entry1.get())
+            self.ticksize = float(self.entry2.get())
+            self.tickrotate = float(self.entry3.get())
+            if self.vocpercent > 1.0 or self.vocpercent < 0.0:
+                self.vocpercent = None
+                tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
+            else:
+                try:
+                    self.vocL = np.array(get_two_word_vocabulary(self.cellgroup, self.vocpercent),dtype = TAV)
+                    ax1 = plt.subplot(111)
+                    ax1.bar(self.vocL["text"],self.vocL["value"])
+                    ax1.tick_params('x',rotation = self.tickrotate,labelsize = self.ticksize)
+                    plt.grid(True,alpha=0.5)
+                    plt.show()
+                except:
+                    tkinter.messagebox.showerror(title="step error", message="prestep something wrong")
+        except:
+            self.vocpercent = None
+            tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
+            
+#         print(self.inputtext)
+        
+if __name__ == "__main__":
+    MG = MainGui()
+
