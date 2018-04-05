@@ -19,17 +19,19 @@ plt.rcParams[u'font.sans-serif'] = ['simhei']      # 指定默认字体
 plt.rcParams['axes.unicode_minus'] = False        # 解决保存图像是负号'-'显示为方块的问题
 
 
+
 FD = None
 CODE = None
 
 if sys.platform == 'linux':
     FD = ".\\"
-    CODE = "utf-8"
+    CODE = "gbk"
 elif sys.platform == "win32":
     FD = "./"
     CODE = "gbk"
     
 TAV = np.dtype([("text",np.unicode_,2),("value",np.int)])
+TAV2 = np.dtype([("text",np.unicode_,3),("value",np.int)])
     
 class Cell():
     ''' cell is the smallies element of textbrain,
@@ -181,59 +183,99 @@ def get_two_word_vocabulary(cellgroup,pc = 0.5):
             if x.size > biggesttubesize:
                 vocL.append((x.selfside.text + x.otherside.text,x.size))
     return vocL
+
+def get_three_word_vocabulary(cellgroup,pc = 0.5,pc2 = 0.5):
+    biggesttubesize = cellgroup.get_biggest_tube_size()
+    vocL = []
+    biggesttubesize *= pc
+    nexttubesize = biggesttubesize * pc2
     
+    for i in cellgroup:
+        for x in i.link:
+            if x.size > biggesttubesize:
+                for y in x.otherside.link:
+                    if y.size > nexttubesize:
+                        vocL.append((x.selfside.text + y.selfside.text + y.otherside.text, (x.size + y.size)/2))
+    return vocL
+
+class TitleInput():
+    def __init__(self,titlename,setin):
+        self.frameinput = tkinter.Frame(setin)
+        self.textname = tkinter.Label(self.frameinput,text = titlename+":")
+        self.textname.pack(side="left")
+        self.textnamein = tkinter.Entry(self.frameinput)
+        self.textnamein.pack(side="right")
+        self.frameinput.pack()
+    
+    def get_data(self):
+        rp = self.textnamein.get()
+        return rp
+   
 class MainGui():
     def __init__(self):
         self.maingui = tkinter.Tk()
         self.maingui.title("Cell")
 ########################################################################################################
-        frame1 = tkinter.Frame(self.maingui)
-        button1 = tkinter.Button(frame1,text="1.input text",command=self._load_txt)
-        button1.pack(side = "left")
+        frame1 = tkinter.Frame(self.maingui,relief = "groove",borderwidth = 1)
+        self.txtcodentry = TitleInput("1.input txt encoding",self.maingui)
+#---------------------------------------------------------------------------------------------------
+        button1 = tkinter.Button(frame1,text="2.input text",command=self._load_txt)
+        button1.grid(row=1,column=0)
 #-------------------------------------------------------------------------------------------------------
-        button2 = tkinter.Button(frame1,text="2.Cell dispose",command=self._cell_dispose,bg = 'red')
-        button2.pack(side = "left")
+        button2 = tkinter.Button(frame1,text="3.Cell dispose",command=self._cell_dispose,bg = 'red')
+        button2.grid(row=1,column=1)
 #------------------------------------------------------------------------------------------------------
         button3 = tkinter.Button(frame1,text="show cellgroup in CLI",command=self._show_cellgroup,bg = 'green')
-        button3.pack(side = "right")
+        button3.grid(row=2,column=0)
         frame1.pack()
+########################################################################################################
+        frame2 = tkinter.Frame(self.maingui)
+        matsetlabel = tkinter.Label(frame2,text = "4.set matplotlib show detail")
+        matsetlabel.pack()
+#-----------------------------------------------------------------------------------------------------
+        self.matticksizeentry = TitleInput("set tick size",frame2)
+#---------------------------------------------------------------------------------------------------
+        self.mattickrotateentry = TitleInput("set tick rotate",frame2)
+        frame2.pack()
 #####################################################################################################        
-        frame2 = tkinter.Frame(self.maingui,relief = "groove",borderwidth = 1)
-        showlabel = tkinter.Label(frame2,text = "3.set config of getted two word struct vocabulary")
+        frame3 = tkinter.Frame(self.maingui,relief = "groove",borderwidth = 1)
+        showlabel = tkinter.Label(frame3,text = "5.set config of getted TWO word struct vocabulary")
         showlabel.pack()
 #--------------------------------------------------------------------------------------------------        
-        frame2_1 = tkinter.Frame(frame2)
-        label1 = tkinter.Label(frame2_1,text = "set precent (0.0~1.0):")
-        label1.grid(row = 0,column=0)
-        self.entry1 = tkinter.Entry(frame2_1)
-        self.entry1.grid(row=0,column=1)
+        self.twowordpreentry = TitleInput("tube size precent (0.0~1.0)",frame3)
 #---------------------------------------------------------------------------------------------------
-        label2 = tkinter.Label(frame2_1,text = "set tick size:")
-        label2.grid(row = 1,column=0)
-        self.entry2 = tkinter.Entry(frame2_1)
-        self.entry2.grid(row=1,column=1)
-#---------------------------------------------------------------------------------------------------
-        label3 = tkinter.Label(frame2_1,text = "set tick rotate:")
-        label3.grid(row = 2,column=0)
-        self.entry3 = tkinter.Entry(frame2_1)
-        self.entry3.grid(row=2,column=1)
-        frame2_1.pack()
-#---------------------------------------------------------------------------------------------------
-        button4 = tkinter.Button(frame2,text="set and show in matplotlib",command=self._pt)
+        button4 = tkinter.Button(frame3,text="set and show in matplotlib",command=self._pt)
         button4.pack()
-        frame2.pack()
-####################################################################################################   
+        frame3.pack()
+####################################################################################################
+        frame4 = tkinter.Frame(self.maingui)
+        showlabel = tkinter.Label(frame4,text = "5.set config of getted THREE word struct vocabulary")
+        showlabel.pack()
+#--------------------------------------------------------------------------------------------------        
+        self.threewordpreentry1 = TitleInput("first tube size precent (0.0~1.0)",frame4)
+        self.threewordpreentry2 = TitleInput("second tube size precent (0.0~1.0)",frame4)
+#---------------------------------------------------------------------------------------------------
+        button5 = tkinter.Button(frame4,text="set and show in matplotlib",command=self._pt2)
+        button5.pack()
+        frame4.pack()
+####################################################################################################  
      
         self.textfile = None
+        self.textcoding = None
         self.text = None
         
         self.cellgroup = None
         
         self.vocpercent = None
+        
+        self.vocpercent3 = None
+        self.vocpercent32 = None
+        
         self.ticksize = None
         self.tickrotate = None
         
         self.vocL = None
+        self.vocL2 = None
         
         self.maingui.mainloop()
         
@@ -241,11 +283,12 @@ class MainGui():
         try:
             fd = tkinter.filedialog.FileDialog(self.maingui,title="select txt file")
             self.textfile = fd.go(FD)
-            filea = codecs.open(self.textfile,'r',encoding=CODE)
+            self.textcoding = self.txtcodentry.get_data()
+            filea = codecs.open(self.textfile,'r',encoding=self.textcoding)
             self.text = filea.read()
             filea.close()
         except:
-            tkinter.messagebox.showerror(title="text input error", message="please input text file correct,may be file encoding problem")
+            tkinter.messagebox.showerror(title="text input error", message="please input text file correct,may be file encoding problem. (utf-8 or gbk ...)")
     
     def _cell_dispose(self):
         try: 
@@ -270,9 +313,10 @@ just please wait. went its done, will give a messagebox.\
     
     def _pt(self):
         try:
-            self.vocpercent = float(self.entry1.get())
-            self.ticksize = float(self.entry2.get())
-            self.tickrotate = float(self.entry3.get())
+            plt.close()
+            self.vocpercent = float(self.twowordpreentry.get_data())
+            self.ticksize = float(self.matticksizeentry.get_data())
+            self.tickrotate = float(self.mattickrotateentry.get_data())
             if self.vocpercent > 1.0 or self.vocpercent < 0.0:
                 self.vocpercent = None
                 tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
@@ -288,6 +332,32 @@ just please wait. went its done, will give a messagebox.\
                     tkinter.messagebox.showerror(title="step error", message="prestep something wrong")
         except:
             self.vocpercent = None
+            tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
+    
+    def _pt2(self):
+        try:
+            plt.close()
+            self.vocpercent3 = float(self.threewordpreentry1.get_data())
+            self.vocpercent32 = float(self.threewordpreentry2.get_data())
+            self.ticksize = float(self.matticksizeentry.get_data())
+            self.tickrotate = float(self.mattickrotateentry.get_data())
+            if self.vocpercent3 > 1.0 or self.vocpercent3 < 0.0 or self.vocpercent32 > 1.0 or self.vocpercent32 < 0.0:
+                self.vocpercent3 = None
+                self.vocpercent32 = None
+                tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
+            else:
+                try:
+                    self.vocL2 = np.array(get_three_word_vocabulary(self.cellgroup, self.vocpercent3,self.vocpercent32),dtype = TAV2)
+                    ax1 = plt.subplot(111)
+                    ax1.bar(self.vocL2["text"],self.vocL2["value"])
+                    ax1.tick_params('x',rotation = self.tickrotate,labelsize = self.ticksize)
+                    plt.grid(True,alpha=0.5)
+                    plt.show()
+                except:
+                    tkinter.messagebox.showerror(title="step error", message="prestep something wrong")
+        except:
+            self.vocpercent3 = None
+            self.vocpercent32 = None
             tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
             
 #         print(self.inputtext)
