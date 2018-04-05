@@ -33,3 +33,8 @@ add gui contrul and matplotlib to show two word struct vocabulary in cell group
 
 ![image](https://github.com/Gameplayer0928/cell-chinese-word-net-/blob/master/2018-04-03%2022-06-24.png)
 ![image](https://github.com/Gameplayer0928/cell-chinese-word-net-/blob/master/2018-04-03%2022-33-55%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE.png)
+
+2018.4.5
+add show three word struct vocabulary in cell group
+
+![image](https://github.com/Gameplayer0928/cell-chinese-word-net-/blob/master/2018-04-05%2021-35-49.png)
