@@ -30,8 +30,7 @@ elif sys.platform == "win32":
     FD = "./"
     CODE = "gbk"
     
-TAV = np.dtype([("text",np.unicode_,2),("value",np.int)])
-TAV2 = np.dtype([("text",np.unicode_,3),("value",np.int)])
+
     
 class Cell():
     ''' cell is the smallies element of textbrain,
@@ -198,6 +197,46 @@ def get_three_word_vocabulary(cellgroup,pc = 0.5,pc2 = 0.5):
                         vocL.append((x.selfside.text + y.selfside.text + y.otherside.text, (x.size + y.size)/2))
     return vocL
 
+def get_sentence(cellgroup,VL = 30,pc = 0.3):
+    """Simple depth first, find next bigget tube"""
+    biggesttubesize = cellgroup.get_biggest_tube_size()
+    rootL = []
+    vocL = []
+    biggesttubesize *= pc
+    
+    for i in cellgroup:
+        for x in i.link:
+            if x.size > biggesttubesize:
+                rootL.append(x)
+#     vtLA.append(vtL)
+    
+    count = 0
+
+    for i in rootL:
+        count = 0
+        sums = 0
+        reL = ""
+        currenttube = i
+        while count < VL:
+            bigtube,num = _find_big_tube(currenttube)
+            reL += bigtube.selfside.text
+            sums += num
+            count += 1
+            currenttube = bigtube
+        
+        vocL.append((reL,int(sums/VL)))
+    return vocL
+#     print(vocL)
+
+def _find_big_tube(currenttube):
+    cursize = 0
+    curlink = currenttube
+    for i in currenttube.otherside.link:
+        if i.size > cursize:
+            curlink = i
+            cursize = i.size 
+    return curlink,curlink.size
+
 class TitleInput():
     def __init__(self,titlename,setin):
         self.frameinput = tkinter.Frame(setin)
@@ -258,8 +297,21 @@ class MainGui():
         button5 = tkinter.Button(frame4,text="set and show in matplotlib",command=self._pt2)
         button5.pack()
         frame4.pack()
+####################################################################################################
+        frame5 = tkinter.Frame(self.maingui,relief = "groove",borderwidth = 1)
+        showlabel = tkinter.Label(frame5,text = "set config of getted long struct sentence\nsimple depth first, find next biggest tube")
+        showlabel.pack()
+#--------------------------------------------------------------------------------------------------        
+        self.simpwordpreentry1 = TitleInput("simple get long struct sentence",frame5)
+        self.simpwordpreentry2 = TitleInput("first tube size precent (0.0~1.0)",frame5)
+#---------------------------------------------------------------------------------------------------
+        button6 = tkinter.Button(frame5,text="set and show in matplotlib",command=self._pt3)
+        button6.pack()
+        frame5.pack()
 ####################################################################################################  
-     
+        self.TAV = np.dtype([("text",np.unicode_,2),("value",np.int)])
+        self.TAV2 = np.dtype([("text",np.unicode_,3),("value",np.int)])
+        
         self.textfile = None
         self.textcoding = None
         self.text = None
@@ -271,11 +323,15 @@ class MainGui():
         self.vocpercent3 = None
         self.vocpercent32 = None
         
+        self.sentencelong = None
+        self.vocpercent4 = None
+        
         self.ticksize = None
         self.tickrotate = None
         
         self.vocL = None
         self.vocL2 = None
+        self.vocL4 = None
         
         self.maingui.mainloop()
         
@@ -322,7 +378,7 @@ just please wait. went its done, will give a messagebox.\
                 tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
             else:
                 try:
-                    self.vocL = np.array(get_two_word_vocabulary(self.cellgroup, self.vocpercent),dtype = TAV)
+                    self.vocL = np.array(get_two_word_vocabulary(self.cellgroup, self.vocpercent),dtype = self.TAV)
                     ax1 = plt.subplot(111)
                     ax1.bar(self.vocL["text"],self.vocL["value"])
                     ax1.tick_params('x',rotation = self.tickrotate,labelsize = self.ticksize)
@@ -347,7 +403,7 @@ just please wait. went its done, will give a messagebox.\
                 tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
             else:
                 try:
-                    self.vocL2 = np.array(get_three_word_vocabulary(self.cellgroup, self.vocpercent3,self.vocpercent32),dtype = TAV2)
+                    self.vocL2 = np.array(get_three_word_vocabulary(self.cellgroup, self.vocpercent3,self.vocpercent32),dtype = self.TAV2)
                     ax1 = plt.subplot(111)
                     ax1.bar(self.vocL2["text"],self.vocL2["value"])
                     ax1.tick_params('x',rotation = self.tickrotate,labelsize = self.ticksize)
@@ -359,9 +415,46 @@ just please wait. went its done, will give a messagebox.\
             self.vocpercent3 = None
             self.vocpercent32 = None
             tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
+
+    def _pt3(self):
+        try:
+            plt.close()
+            self.sentencelong = int(self.simpwordpreentry1.get_data())
+            self.vocpercent4 = float(self.simpwordpreentry2.get_data())
+            self.ticksize = float(self.matticksizeentry.get_data())
+            self.tickrotate = float(self.mattickrotateentry.get_data())
+            TAV3 = np.dtype([("text",np.unicode_,self.sentencelong),("value",np.int)])
+            if self.sentencelong < 0 or self.vocpercent4 > 1.0 or self.vocpercent4 < 0.0:
+                self.sentencelong = None
+                self.vocpercent4 = None
+                tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
+            else:
+                try:
+                    self.vocL3 = np.array(get_sentence(self.cellgroup, self.sentencelong,self.vocpercent4),dtype = TAV3)
+                    ax1 = plt.subplot(111)
+                    ax1.bar(self.vocL3["text"],self.vocL3["value"])
+                    ax1.tick_params('x',rotation = self.tickrotate,labelsize = self.ticksize)
+                    plt.grid(True,alpha=0.5)
+                    plt.show()
+                except:
+                    tkinter.messagebox.showerror(title="step error", message="prestep something wrong")
+        except:
+            self.sentencelong = None
+            self.vocpercent4 = None
+            tkinter.messagebox.showerror(title = "error", message="config setting must follow tips")
             
 #         print(self.inputtext)
         
 if __name__ == "__main__":
+#     textfile = "./example.txt"
+#     fd = codecs.open(textfile,'r',encoding = "utf-8")
+#     cr = fd.read()
+#     fd.close()
+#     print(cr)
+#     cellgroup = create_cell_group(cr)
+#     create_cell_link(cellgroup, cr)
+#     for_in(linktube, size, fade, time)
+#     get_sentence(cellgroup)
+#     show_cellgroup(cellgroup)
     MG = MainGui()
 
